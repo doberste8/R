@@ -27,4 +27,10 @@ fitness <- function(genome) {
 
 g <- c(3,5,8,10,13,1,26,30,2,2)
 print(fitness(g))
- 
+
+genome <- function() {
+    t <- sample(1:10,100,replace = T)
+    return(table(t))
+}
+t <- data.frame(t(replicate(3,genome())))
+t$max <- apply(t,1,fitness)
