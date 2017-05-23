@@ -1,5 +1,5 @@
 library(readr)
-castle_solutions <- read_csv("B:/R/castle-solutions.csv")
+castle_solutions <- read_csv("castle-solutions.csv")
 
 par(mfrow = c(2, 5))  # 3 rows and 2 columns
 for (i in c(1:10)) {
