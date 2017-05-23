@@ -31,7 +31,7 @@ fitness <- function(genome) {
     }
     score[j] <- match_score
     }
-    wp <- (length(score[score>=28])+(length(score[score==27.5])*.5))/length(score)
+    wp <- (length(score[score>27.5])+(length(score[score==27.5])*.5))/length(score)
     return(wp)
 }
 
@@ -48,7 +48,14 @@ weighted_fitness <- function(genome) {
                 }
             }
         }
-        score[j] <- match_score*castle_solutions[j,12]^2
+        
+        if (match_score>27.5) {
+            score[j] <- castle_solutions[j,12]^2
+        } else {
+            if (match_score==27.5) {
+                score[j] <- .5*castle_solutions[j,12]^2
+            }
+        }
     }
     return(Reduce("+",score))
 }
@@ -71,4 +78,6 @@ t$wp <- apply(t,1,fitness)
 
 par(mfrow = c(1, 1))  # 3 rows and 2 columns
 hist(castle_solutions$wp, prob='T', breaks=50)
+hist(castle_solutions$wpw, prob='T', breaks=50)
 plot(castle_solutions$wp,castle_solutions$wpw)
+plot(castle_solutions$wpw,castle_solutions$wp)
