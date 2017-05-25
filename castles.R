@@ -1,5 +1,6 @@
 library(readr)
 library(parallel)
+library(GA)
 
 # Calculate the number of cores
 no_cores <- detectCores() - 1
@@ -65,25 +66,24 @@ clusterExport(cl, "castle_solutions")
 castle_solutions$wpw <- parApply(cl, castle_solutions[,1:10],1,weighted_fitness)
 stopCluster(cl)
 c_s <- castle_solutions
-castle_solutions <- cs
-castle_solutions <- subset(c_s, wp>=.65)
+castle_solutions <- subset(c_s, wp>=.5)
 
-g <- c(3,5,8,10,13,1,26,30,2,2)
-print(fitness(g))
-print(weighted_fitness(g))
+#g <- c(3,5,8,10,13,1,26,30,2,2)
+#print(fitness(g))
+#print(weighted_fitness(g))
 
-genome <- function() {
-    t <- sample(1:10,100,replace = T)
-    return(table(t))
-}
-t <- data.frame(t(replicate(3,genome())))
-t$wp <- apply(t,1,fitness)
+#genome <- function() {
+#    t <- sample(1:10,100,replace = T)
+#    return(table(t))
+#}
+#t <- data.frame(t(replicate(3,genome())))
+#t$wp <- apply(t,1,fitness)
 
-par(mfrow = c(1, 1))  # 3 rows and 2 columns
-hist(castle_solutions$wp, prob='T', breaks=50)
-hist(castle_solutions$wpw, prob='T', breaks=50)
-plot(castle_solutions$wp,castle_solutions$wpw)
-plot(castle_solutions$wpw,castle_solutions$wp)
+#par(mfrow = c(1, 1))  # 3 rows and 2 columns
+#hist(castle_solutions$wp, prob='T', breaks=50)
+#hist(castle_solutions$wpw, prob='T', breaks=50)
+#plot(castle_solutions$wp,castle_solutions$wpw)
+#plot(castle_solutions$wpw,castle_solutions$wp)
 
 c1 <- function(x) {
     return(100 - sum(x))
@@ -94,22 +94,29 @@ f <- function(x) {
     pen <- sqrt(.Machine$double.xmax)
     return(weighted_fitness(x)+min(c1(x),0)*pen)
 }
-f(g)
+#f(g)
 
-f <- function(x) {
-    pen <- sqrt(.Machine$double.xmax)
-    return(sum(x)+min(c1(x),0)*pen)
-}
+#f <- function(x) {
+#    pen <- sqrt(.Machine$double.xmax)
+#    return(sum(x)+min(c1(x),0)*pen)
+#}
 
-library(GA)
-GA <- ga(type = "real-valued",
-         fitness = f,
-         min = c(0,0,0,0,0,0,0,0,0,0),
-         max = c(50,50,50,50,50,50,50,50,50,50),
-         popSize = 50, maxiter = 1000, run = 100,
-         parallel = T, monitor = gaMonitor,
-         pmutation = .2)
-summary(GA)
-plot(GA)
-g1 <- c(9,8,6,16,21,7,11,7,8,7)
-g2 <- c(8,10,7,17,23,6,5,6,10,8)
+#GA <- ga(type = "real-valued",
+#         fitness = f,
+#         min = c(0,0,0,0,0,0,0,0,0,0),
+#         max = c(50,50,50,50,50,50,50,50,50,50),
+#         popSize = 50, maxiter = 1000, run = 100,
+#         parallel = T, monitor = gaMonitor,
+#         pmutation = .2)
+#summary(GA)
+#plot(GA)
+#g1 <- c(9,8,6,16,21,7,11,7,8,7)
+#g2 <- c(8,10,7,17,23,6,5,6,10,8)
+
+GAT <- replicate(5,ga(type = "real-valued",
+                      fitness = f,
+                      min = c(0,0,0,0,0,0,0,0,0,0),
+                      max = c(50,50,50,50,50,50,50,50,50,50),
+                      popSize = 50, maxiter = 1000, run = 100,
+                      parallel = T, monitor = gaMonitor,
+                      pmutation = .2))
