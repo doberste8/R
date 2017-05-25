@@ -66,7 +66,7 @@ clusterExport(cl, "castle_solutions")
 castle_solutions$wpw <- parApply(cl, castle_solutions[,1:10],1,weighted_fitness)
 stopCluster(cl)
 c_s <- castle_solutions
-castle_solutions <- subset(c_s, wp>=.5)
+castle_solutions <- subset(c_s, wp>=0)
 
 #g <- c(3,5,8,10,13,1,26,30,2,2)
 #print(fitness(g))
@@ -113,10 +113,15 @@ f <- function(x) {
 #g1 <- c(9,8,6,16,21,7,11,7,8,7)
 #g2 <- c(8,10,7,17,23,6,5,6,10,8)
 
-GAT <- replicate(5,ga(type = "real-valued",
+GAT <- replicate(1,ga(type = "real-valued",
                       fitness = f,
                       min = c(0,0,0,0,0,0,0,0,0,0),
                       max = c(50,50,50,50,50,50,50,50,50,50),
-                      popSize = 50, maxiter = 1000, run = 100,
+                      popSize = 100, maxiter = 1000, run = 100,
                       parallel = T, monitor = gaMonitor,
-                      pmutation = .2))
+                      pmutation = .2,
+          population = genome))
+
+genome <- function(object) {
+    return(t(replicate(object@popSize,table(sample(1:10,100,replace = T)),simplify = "matrix")))
+}
