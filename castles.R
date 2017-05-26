@@ -71,7 +71,7 @@ weighted_fitness <- function(genome) {
     return(Reduce("+",score))
 }
 
-castle_solutions$wp <- parApply(cl, castle_solutions[,1:10],1,fitness)
+castle_solutions$wp <- parApply(cl, castle_solutions[,1:10],1,sfitness)
 clusterExport(cl, "castle_solutions")
 castle_solutions$wpw <- parApply(cl, castle_solutions[,1:10],1,weighted_fitness)
 stopCluster(cl)
