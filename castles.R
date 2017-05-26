@@ -17,29 +17,37 @@ for (i in c(1:10)) {
     hist(castle_solutions[[i]], prob='T', breaks=50, main=paste("Castle",i))
 }
 
-fitness <- function(genome) {
+sfitness <- function(genome) {
     score <- vector("numeric",nrow(castle_solutions))
     for (j in 1:nrow(castle_solutions)) {
-        match_score <- 0;
-    for (i in 1:length(genome)) {
-        if (genome[i] > castle_solutions[j,i]) {
-            match_score <- match_score + i 
+        match_score <- 0
+        for (i in 1:length(genome)) {
+            if (genome[i] > castle_solutions[j,i]) {
+                match_score <- match_score + i 
+            } else {
+                if (genome[i] == castle_solutions[j,i]) {
+                    match_score <- match_score + i*.5 
+                }
+            }
+        }
+        
+        if (match_score>27.5) {
+            score[j] <- 1
         } else {
-            if (genome[i] == castle_solutions[j,i]) {
-                match_score <- match_score + i*.5 
+            if (match_score==27.5) {
+                score[j] <- .5
+            } else {
+                score[j] <- 0
             }
         }
     }
-    score[j] <- match_score
-    }
-    wp <- (length(score[score>27.5])+(length(score[score==27.5])*.5))/length(score)
-    return(wp)
+    return(Reduce("+",score)/nrow(castle_solutions))
 }
 
 weighted_fitness <- function(genome) {
     score <- vector("numeric",nrow(castle_solutions))
     for (j in 1:nrow(castle_solutions)) {
-        match_score <- 0;
+        match_score <- 0
         for (i in 1:length(genome)) {
             if (genome[i] > castle_solutions[j,i]) {
                 match_score <- match_score + i 
@@ -55,6 +63,8 @@ weighted_fitness <- function(genome) {
         } else {
             if (match_score==27.5) {
                 score[j] <- .5*castle_solutions[j,12]^2
+            } else {
+                score[j] <- 0
             }
         }
     }
@@ -92,36 +102,23 @@ c1 <- function(x) {
 f <- function(x) {
     x <- round(x)
     pen <- sqrt(.Machine$double.xmax)
-    return(weighted_fitness(x)+min(c1(x),0)*pen)
+    return(sfitness(x)+min(c1(x),0)*pen)
 }
-#f(g)
 
-#f <- function(x) {
-#    pen <- sqrt(.Machine$double.xmax)
-#    return(sum(x)+min(c1(x),0)*pen)
-#}
-
-#GA <- ga(type = "real-valued",
-#         fitness = f,
-#         min = c(0,0,0,0,0,0,0,0,0,0),
-#         max = c(50,50,50,50,50,50,50,50,50,50),
-#         popSize = 50, maxiter = 1000, run = 100,
-#         parallel = T, monitor = gaMonitor,
-#         pmutation = .2)
 #summary(GA)
 #plot(GA)
 #g1 <- c(9,8,6,16,21,7,11,7,8,7)
 #g2 <- c(8,10,7,17,23,6,5,6,10,8)
 
-GAT <- replicate(1,ga(type = "real-valued",
-                      fitness = f,
-                      min = c(0,0,0,0,0,0,0,0,0,0),
-                      max = c(50,50,50,50,50,50,50,50,50,50),
-                      popSize = 100, maxiter = 1000, run = 100,
-                      parallel = T, monitor = gaMonitor,
-                      pmutation = .2,
-          population = genome))
-
-genome <- function(object) {
+initPop <- function(object) {
     return(t(replicate(object@popSize,table(sample(1:10,100,replace = T)),simplify = "matrix")))
 }
+
+GA <- ga(type = "real-valued",
+         fitness = f,
+         min = c(0,0,0,0,0,0,0,0,0,0),
+         max = c(50,50,50,50,50,50,50,50,50,50),
+         popSize = 100, maxiter = 1000, run = 100,
+         parallel = T, monitor = gaMonitor,
+         pmutation = .2,
+         population = initPop)
