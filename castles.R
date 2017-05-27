@@ -119,17 +119,17 @@ pop2 <- function(object) {
     return(as.matrix(t[1:object@popSize,]))
 }
 
-GA <- replicate(3,ga(type = "real-valued",
+GA <- replicate(1,ga(type = "real-valued",
          fitness = f,
          min = c(0,0,0,0,0,0,0,0,0,0),
          max = c(50,50,50,50,50,50,50,50,50,50),
          popSize = 100, maxiter = 1000, run = 100,
          parallel = T, monitor = gaMonitor,
-         pmutation = .2,
+         pmutation = .3,
          population = pop2))
 
 gather <- function(x) {
     solutions <- data.frame(t(round(x@solution[1,])), f=sfitness(round(x@solution[1,])), wf=weighted_fitness(round(x@solution[1,])))
     return(solutions)
 }
-solutions <- rbind(solutions,do.call(rbind.data.frame, lapply(GAT,gather)))
+solutions <- rbind(solutions,do.call(rbind.data.frame, lapply(GA,gather)))
