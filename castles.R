@@ -114,11 +114,22 @@ initPop <- function(object) {
     return(t(replicate(object@popSize,table(sample(1:10,100,replace = T)),simplify = "matrix")))
 }
 
-GA <- ga(type = "real-valued",
+pop2 <- function(object) {
+    t<-c_s[order(-c_s$wp),1:10]
+    return(as.matrix(t[1:object@popSize,]))
+}
+
+GA <- replicate(3,ga(type = "real-valued",
          fitness = f,
          min = c(0,0,0,0,0,0,0,0,0,0),
          max = c(50,50,50,50,50,50,50,50,50,50),
          popSize = 100, maxiter = 1000, run = 100,
          parallel = T, monitor = gaMonitor,
          pmutation = .2,
-         population = initPop)
+         population = pop2))
+
+gather <- function(x) {
+    solutions <- data.frame(t(round(x@solution[1,])), f=sfitness(round(x@solution[1,])), wf=weighted_fitness(round(x@solution[1,])))
+    return(solutions)
+}
+solutions <- rbind(solutions,do.call(rbind.data.frame, lapply(GAT,gather)))
