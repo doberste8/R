@@ -102,7 +102,7 @@ c1 <- function(x) {
 f <- function(x) {
     x <- round(x)
     pen <- sqrt(.Machine$double.xmax)
-    return(sfitness(x)+min(c1(x),0)*pen)
+    return(weighted_fitness(x)+min(c1(x),0)*pen)
 }
 
 #summary(GA)
