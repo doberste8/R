@@ -1,7 +1,7 @@
 # create list of teams and give them random ratings from a normal distribution
-teams <- LETTERS[1:20]
+teams <- LETTERS[1:10]
 #set.seed(161)
-spread <- 1000
+spread <- 600
 ratings <- rlogis(20,0,(spread/10*sqrt(3))/pi)
 ratings <- sort(ratings, decreasing = TRUE)
 ratingTable <- data.frame(teams,ratings,spread)
@@ -10,6 +10,10 @@ names(ratingTable) <- c("team", "rating", "ratingDeviation")
 pMOV <- function(x) {
   mov <- ifelse(x>=.5,55.7*log(x+.5)/(x+.5),-55.7*log(-x+1.5)/(-x+1.5))
   return(mov)
+}
+
+pWIN <- function(x) {
+    
 }
 
 expPoint <- function(rA,rB,rdA=spread,rdB=spread) {
@@ -46,3 +50,4 @@ lines(density(sl_games$"home score"-sl_games$"away score"),col="red",lwd=2)
 summary(sl_games$"home score"-sl_games$"away score")
 sd(sl_games$"home score"-sl_games$"away score")
 sd(games[,3]-games[,4])
+
