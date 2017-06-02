@@ -1,21 +1,36 @@
+library(readr)
+sl_games <- read_csv("Elo data - Sheet1.csv")
+
 # create list of teams and give them random ratings from a normal distribution
 teams <- LETTERS[1:10]
 #set.seed(161)
-spread <- 600
+spread <- 600 # set to 600 means that every 100 point difference in rating
+              # roughly corresponds to an additional 5% chance to win a point
 ratings <- rlogis(20,0,(spread/10*sqrt(3))/pi)
 ratings <- sort(ratings, decreasing = TRUE)
 ratingTable <- data.frame(teams,ratings,spread)
 names(ratingTable) <- c("team", "rating", "ratingDeviation")
 
+# returns predicted margin of victory given x=team's probability of scoring
+# an individual point
 pMOV <- function(x) {
   mov <- ifelse(x>=.5,55.7*log(x+.5)/(x+.5),-55.7*log(-x+1.5)/(-x+1.5))
   return(mov)
 }
 
-pWIN <- function(x) {
-    
+# returns the probability of a team winning a game given x=team's probability
+# of scoring an individual point
+pWIN <- function(x,gameTo=15) {
+    otPoint <- gameTo*2-2
+    i <- (gameTo:otPoint)
+    pWNOT <- sum(choose(otPoint,i)*x^i*(1-x)^(otPoint-i)) #prob of win without overtime
+    pOT <- choose(otPoint,otPoint/2)*x^(otPoint/2)*(1-x)^(otPoint/2) #prob of OT
+    pWOT <- x^2+2*x^3*(1-x)+4*x^3*(1-x)^2
+    return(pWNOT+pOT*pWOT)
 }
 
+# returns the probability of a team to score an individual point against
+# an opponent given their respective ratings
 expPoint <- function(rA,rB,rdA=spread,rdB=spread) {
   p <- 1/(1+exp((rB-rA)*pi/sqrt(3*(rdA^2+rdB^2))))
   return(p)
