@@ -6,7 +6,8 @@ teams <- LETTERS[1:10]
 #set.seed(161)
 spread <- 600 # set to 600 means that every 100 point difference in rating
               # roughly corresponds to an additional 5% chance to win a point
-ratings <- rlogis(20,0,(spread/10*sqrt(3))/pi)
+rlogis2 <- function(n,mean,sd) { mean+sd*scale(rlogis(n)) }
+ratings <- rlogis2(10,0,(spread/10*sqrt(3))/pi)
 ratings <- sort(ratings, decreasing = TRUE)
 ratingTable <- data.frame(teams,ratings,spread)
 names(ratingTable) <- c("team", "rating", "ratingDeviation")
