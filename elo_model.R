@@ -9,8 +9,8 @@ spread <- 600 # set to 600 means that every 100 point difference in rating
 rlogis2 <- function(n,mean,sd) { mean+sd*scale(rlogis(n)) }
 ratings <- rlogis2(10,0,(spread/10*sqrt(3))/pi)
 ratings <- sort(ratings, decreasing = TRUE)
-ratingTable <- data.frame(teams,ratings,spread)
-names(ratingTable) <- c("team", "rating", "ratingDeviation")
+ratingTable <- data.frame(teams,ratings,spread,0,spread)
+names(ratingTable) <- c("team", "rating", "ratingDeviation", "calcRating", "calcRatingDeviation")
 
 # returns predicted margin of victory given x=team's probability of scoring
 # an individual point
@@ -67,3 +67,16 @@ summary(sl_games$"home score"-sl_games$"away score")
 sd(sl_games$"home score"-sl_games$"away score")
 sd(games[,3]-games[,4])
 
+calcRating <- function(games) {
+    
+}
+
+gameRating <- function(tA, tB, sA, sB) {
+    k <- 20
+    rA <- subset(ratingTable, team==tA)[,4]
+    rB <- subset(ratingTable, team==tB)[,4]
+    rdA <- subset(ratingTable, team==tA)[,5]
+    rdB <- subset(ratingTable, team==tB)[,5]
+    rating <- k*((sA+1)/(sA+sB+2)-expPoint(rA,rB,rdA,rdB))
+    return(rating)
+}
