@@ -1,4 +1,6 @@
 library(readr)
+library(dplyr)
+library(ggplot2)
 sl_games <- read_csv("Elo data - Sheet1.csv")
 
 # create list of teams and give them random ratings from a normal distribution
@@ -56,7 +58,7 @@ simGame <- function(tA,tB) {
   return(c(sA,sB))
 }
 
-t <- replicate(1000,sim(ratingTable),simplify = T)
+t <- replicate(100,sim(ratingTable),simplify = T)
 games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
 hist(games[,3]-games[,4],probability = TRUE)
 lines(density(games[,3]-games[,4]),col="blue",lwd=2)
@@ -67,16 +69,34 @@ summary(sl_games$"home score"-sl_games$"away score")
 sd(sl_games$"home score"-sl_games$"away score")
 sd(games[,3]-games[,4])
 
-calcRating <- function(games) {
-    
-}
+ratingTable$calcRating <- 0
 
 gameRating <- function(tA, tB, sA, sB) {
-    k <- 20
+    k <- 1000
     rA <- subset(ratingTable, team==tA)[,4]
     rB <- subset(ratingTable, team==tB)[,4]
     rdA <- subset(ratingTable, team==tA)[,5]
     rdB <- subset(ratingTable, team==tB)[,5]
-    rating <- k*((sA+1)/(sA+sB+2)-expPoint(rA,rB,rdA,rdB))
+    rating <- ifelse((sA+1)/(sA+sB+2)>.5, k*(log((sA+1)/(sA+sB+2)+.5)+.5-expPoint(rA,rB,rdA,rdB)), k*(.5-log(-(sA+1)/(sA+sB+2)+1.5)-expPoint(rA,rB,rdA,rdB)))
     return(rating)
+}
+
+calcRating <- function(games) {
+    t <- games
+    t$gameRating <- mapply(gameRating, t$teamA, t$teamB, t$scoreA, t$scoreB)
+    teamScores <- bind_rows(rename(select(t, teamA, gameRating),team=teamA),transmute(select(t, teamB, gameRating), team=teamB, gameRating=-gameRating))
+    avg <- (teamScores %>% group_by(team) %>% summarise(avg = mean(gameRating)))$avg
+    return(avg)
+}
+
+ratingHist <- data.frame('0'=rep(0,10))
+for(i in 1:20) {
+    ratingTable$calcRating <- calcRating(games)
+    ratingHist[,i] <- ratingTable$calcRating
+    print(cor(ratingTable$rating, ratingTable$calcRating, method = "pearson"))
+    cat("iteration: ",i,"ratings: ",ratingTable$calcRating,"\n")
+}
+
+for(i in 1:10) {
+    plot(seq(1:20),ratingHist[i,])
 }
