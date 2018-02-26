@@ -58,7 +58,7 @@ simGame <- function(tA,tB) {
   return(c(sA,sB))
 }
 
-t <- replicate(100,sim(ratingTable),simplify = T)
+t <- replicate(10000,sim(ratingTable),simplify = T)
 games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
 hist(games[,3]-games[,4],probability = TRUE)
 lines(density(games[,3]-games[,4]),col="blue",lwd=2)
@@ -99,4 +99,8 @@ for(i in 1:20) {
 
 for(i in 1:10) {
     plot(seq(1:20),ratingHist[i,])
+}
+
+testRating <- function(A,B) {
+    return((count(games, teamA==A, teamB==B, scoreA==15)[8,4]+count(games, teamA==B, teamB==A, scoreB==15)[8,4])/(count(games, teamA==A, teamB==B)[4,3]+count(games, teamA==B, teamB==A)[4,3]))
 }
