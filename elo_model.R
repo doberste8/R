@@ -58,7 +58,7 @@ simGame <- function(tA,tB) {
   return(c(sA,sB))
 }
 
-t <- replicate(10000,sim(ratingTable),simplify = T)
+t <- replicate(5000,sim(ratingTable),simplify = T)
 games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
 hist(games[,3]-games[,4],probability = TRUE)
 lines(density(games[,3]-games[,4]),col="blue",lwd=2)
@@ -72,7 +72,7 @@ sd(games[,3]-games[,4])
 ratingTable$calcRating <- 0
 
 gameRating <- function(tA, tB, sA, sB) {
-    k <- 1000
+    k <- 1500
     rA <- subset(ratingTable, team==tA)[,4]
     rB <- subset(ratingTable, team==tB)[,4]
     rdA <- subset(ratingTable, team==tA)[,5]
@@ -86,11 +86,12 @@ calcRating <- function(games) {
     t$gameRating <- mapply(gameRating, t$teamA, t$teamB, t$scoreA, t$scoreB)
     teamScores <- bind_rows(rename(select(t, teamA, gameRating),team=teamA),transmute(select(t, teamB, gameRating), team=teamB, gameRating=-gameRating))
     avg <- (teamScores %>% group_by(team) %>% summarise(avg = mean(gameRating)))$avg
+    avg <- avg + ratingTable$calcRating
     return(avg)
 }
 
 ratingHist <- data.frame('0'=rep(0,10))
-for(i in 1:20) {
+for(i in 1:10) {
     ratingTable$calcRating <- calcRating(games)
     ratingHist[,i] <- ratingTable$calcRating
     print(cor(ratingTable$rating, ratingTable$calcRating, method = "pearson"))
@@ -98,7 +99,7 @@ for(i in 1:20) {
 }
 
 for(i in 1:10) {
-    plot(seq(1:20),ratingHist[i,])
+    plot(seq(1:10),ratingHist[i,])
 }
 
 testRating <- function(A,B) {
