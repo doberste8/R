@@ -30,7 +30,7 @@ pWIN <- function(x,gameTo=15,sA=0,sB=0) {
     pWNOT <- sum(choose(otPoint,i)*x^i*(1-x)^(otPoint-i)) #prob of win without overtime
     pOT <- choose(otPoint,gameTo-sA-1)*x^(gameTo-sA-1)*(1-x)^(gameTo-sB-1) #prob of OT
     pWOT <- x^2+2*x^3*(1-x)+4*x^3*(1-x)^2
-    return(pWNOT+pOT*pWOT)
+    return(ifelse(otPoint==0,pWOT,pWNOT+pOT*pWOT))
 }
 
 # returns the probability of a team to score an individual point against
