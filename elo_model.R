@@ -24,13 +24,13 @@ pMOV <- function(x) {
 
 # returns the probability of a team winning a game given x=team's probability
 # of scoring an individual point
-pWIN <- function(x,gameTo=15,sA=0,sB=0) {
-    otPoint <- gameTo-sA+gameTo-sB-2
+pWIN <- function(x,sA=0,sB=0,gameTo=15) {
+    otPoint <- 2*gameTo-sA-sB-2
     i <- ((gameTo-sA):otPoint)
-    pWNOT <- sum(choose(otPoint,i)*x^i*(1-x)^(otPoint-i)) #prob of win without overtime
+    pWNOT <- ifelse(otPoint>=gameTo-sA,sum(choose(i-1,gameTo-sA-1)*x^(gameTo-sA)*(1-x)^(i-gameTo+sA)),0) #prob of win without overtime
     pOT <- choose(otPoint,gameTo-sA-1)*x^(gameTo-sA-1)*(1-x)^(gameTo-sB-1) #prob of OT
     pWOT <- x^2+2*x^3*(1-x)+4*x^3*(1-x)^2
-    return(ifelse(otPoint==0,pWOT,pWNOT+pOT*pWOT))
+    return(pWNOT+pOT*pWOT)
 }
 
 # returns the probability of a team to score an individual point against
