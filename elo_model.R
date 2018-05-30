@@ -1,17 +1,19 @@
 library(readr)
 library(dplyr)
 library(ggplot2)
+library(Metrics)
 sl_games <- read_csv("Elo data - Sheet1.csv")
 
 # create list of teams and give them random ratings from a normal distribution
-teams <- LETTERS[1:10]
+numTeams <- 12
+teams <- LETTERS[1:numTeams]
 #set.seed(161)
 spread <- 600 # set to 600 means that every 100 point difference in rating
               # roughly corresponds to an additional 5% chance to win a point
 rlogis2 <- function(n,mean,sd) { mean+sd*scale(rlogis(n)) }
-ratings <- rlogis2(10,0,(spread/10*sqrt(3))/pi)
+ratings <- rlogis2(numTeams,0,(spread/10*sqrt(3))/pi)
 ratings <- sort(ratings, decreasing = TRUE)
-spreads <- rnorm(10,spread,0)
+spreads <- rnorm(numTeams,spread,0)
 ratingTable <- data.frame(teams,ratings,spreads,0,spread)
 names(ratingTable) <- c("team", "rating", "ratingDeviation", "calcRating", "calcRatingDeviation")
 
@@ -59,7 +61,7 @@ simGame <- function(tA,tB) {
   return(c(sA,sB))
 }
 
-t <- replicate(1000,sim(ratingTable),simplify = T)
+t <- replicate(100,sim(ratingTable),simplify = T)
 games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
 hist(games[,3]-games[,4],probability = TRUE)
 lines(density(games[,3]-games[,4]),col="blue",lwd=2)
@@ -72,6 +74,8 @@ sd(games[,3]-games[,4])
 
 ratingTable$calcRating <- 0
 ratingTable$calcRatingDeviation <- spread
+ratingTable$calcRatingStandard <- 0
+ratingTable$rIndex <- 1
 
 gameRating <- function(tA, tB, sA, sB) {
     k <- 1500
@@ -84,6 +88,27 @@ gameRating <- function(tA, tB, sA, sB) {
     return(rating)
 }
 
+gameRatingStandard <- function(tA, tB, sA, sB) {
+    k <- 30
+    rA <- subset(ratingTable, team==tA)[,6]
+    rB <- subset(ratingTable, team==tB)[,6]
+    rdA <- subset(ratingTable, team==tA)[,5]
+    rdB <- subset(ratingTable, team==tB)[,5]
+    rIndexA <- subset(ratingTable, team==tA)[,7]
+    rIndexB <- subset(ratingTable, team==tB)[,7]
+    #k <- (rdA*sqrt(3))/pi*4.5
+    ratingA <- ifelse((sA+1)/(sA+sB+2)>.5, k*(log((sA+1)/(sA+sB+2)+.5)+.5-expPoint(rA,rB,rdA,rdB)), k*(.5-log(-(sA+1)/(sA+sB+2)+1.5)-expPoint(rA,rB,rdA,rdB)))
+    ratingB <- ifelse((sB+1)/(sB+sA+2)>.5, k*(log((sB+1)/(sB+sA+2)+.5)+.5-expPoint(rB,rA,rdB,rdA)), k*(.5-log(-(sB+1)/(sB+sA+2)+1.5)-expPoint(rB,rA,rdB,rdA)))
+    ratingTable[which(ratingTable[,1] == tA),6] <<- rA + ratingA
+    ratingTable[which(ratingTable[,1] == tB),6] <<- rB + ratingB
+    #ratingTable[which(ratingTable[,1] == tA),5] <<- 600/rIndexA^(1/8)
+    #ratingTable[which(ratingTable[,1] == tB),5] <<- 600/rIndexB^(1/8)
+    ratingTable[which(ratingTable[,1] == tA),7] <<- rIndexA+1
+    ratingTable[which(ratingTable[,1] == tB),7] <<- rIndexB+1
+    #cat(tA, " Rating: ",rA+rating," ", tB, " Rating: ",rB-rating,"\n")
+    return(ratingA)
+}
+
 calcRating <- function(games) {
     t <- games
     t$gameRatingA <- mapply(gameRating, t$teamA, t$teamB, t$scoreA, t$scoreB)
@@ -94,9 +119,15 @@ calcRating <- function(games) {
     return(avg)
 }
 
+calcRatingStandard <- function(games) {
+    t <- games
+    t$gameRatingA <- mapply(gameRatingStandard, t$teamA, t$teamB, t$scoreA, t$scoreB)
+}
+
+calcRatingStandard(games)
 iterations <- 10
 
-ratingHist <- data.frame('0'=rep(0,10))
+ratingHist <- data.frame('0'=rep(0,numTeams))
 for(i in 1:iterations) {
     avg <- calcRating(games)
     ratingTable$calcRating <- avg$avg
@@ -106,7 +137,14 @@ for(i in 1:iterations) {
     cat("iteration: ",i,"ratings: ",ratingTable$calcRating,"\n")
 }
 
-for(i in 1:10) {
+cat("Pearson Cor Iter: ",cor(ratingTable$rating, ratingTable$calcRating, method = "pearson"),"\n")
+cat("RMSE Iter: ",rmse(ratingTable$rating, ratingTable$calcRating),"\n")
+cat("MAE Iter: ",mae(ratingTable$rating, ratingTable$calcRating),"\n")
+cat("Pearson Cor Std: ",cor(ratingTable$rating, ratingTable$calcRatingStandard, method = "pearson"),"\n")
+cat("RMSE Standard Std: ",rmse(ratingTable$rating, ratingTable$calcRatingStandard),"\n")
+cat("MAE Standard Std: ",mae(ratingTable$rating, ratingTable$calcRatingStandard),"\n")
+
+for(i in 1:numTeams) {
     plot(seq(1:iterations),ratingHist[i,])
 }
 
