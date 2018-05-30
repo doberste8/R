@@ -7,24 +7,13 @@ library(dplyr)
 library(ggplot2)
 library(Metrics)
 
-# create list of teams and give them random ratings from a normal distribution
-numTeams <- 12
-teams <- LETTERS[1:numTeams]
-#set.seed(161)
-spread <- 600 # set to 600 means that every 100 point difference in rating
-              # roughly corresponds to an additional 5% chance to win a point
-rlogis2 <- function(n,mean,sd) { mean+sd*scale(rlogis(n)) }
-ratings <- rlogis2(numTeams,0,(spread/10*sqrt(3))/pi)
-ratings <- sort(ratings, decreasing = TRUE)
-spreads <- rnorm(numTeams,spread,0)
-ratingTable <- data.frame(teams,ratings,spreads,0,spread)
-names(ratingTable) <- c("team", "rating", "ratingDeviation", "calcRating", "calcRatingDeviation")
+#functions
 
 # returns predicted margin of victory given x=team's probability of scoring
 # an individual point
 pMOV <- function(x) {
-  mov <- ifelse(x>=.5,55.7*log(x+.5)/(x+.5),-55.7*log(-x+1.5)/(-x+1.5))
-  return(mov)
+    mov <- ifelse(x>=.5,55.7*log(x+.5)/(x+.5),-55.7*log(-x+1.5)/(-x+1.5))
+    return(mov)
 }
 
 # returns the probability of a team winning a game given x=team's probability
@@ -41,36 +30,32 @@ pWIN <- function(x,sA=0,sB=0,gameTo=15) {
 # returns the probability of a team to score an individual point against
 # an opponent given their respective ratings
 expPoint <- function(rA,rB,rdA=spread,rdB=spread) {
-  p <- 1/(1+exp((rB-rA)*pi/sqrt(3*(rdA^2+rdB^2))))
-  return(p)
+    p <- 1/(1+exp((rB-rA)*pi/sqrt(3*(rdA^2+rdB^2))))
+    return(p)
 }
 
 sim <- function(df) {
-  rSample <- df[sample(nrow(df),2),]
-  cat("rA: ",rSample[1,"rating"],"rB: ",rSample[2,"rating"],"\n")
-  result <- simGame(rSample[1,],rSample[2,])
-  return(c(rSample[1,"team"],rSample[2,"team"],result[1],result[2]))
+    rSample <- df[sample(nrow(df),2),]
+    cat("rA: ",rSample[1,"rating"],"rB: ",rSample[2,"rating"],"\n")
+    result <- simGame(rSample[1,],rSample[2,])
+    return(c(rSample[1,"team"],rSample[2,"team"],result[1],result[2]))
 }
 
 simGame <- function(tA,tB) {
-  sA <- 0
-  sB <- 0
-  while((sA<15) & (sB<15)) {
-  rA <- rlogis(1,tA[1,"rating"],(tA[1,"ratingDeviation"]*sqrt(3))/pi)
-  rB <- rlogis(1,tB[1,"rating"],(tB[1,"ratingDeviation"]*sqrt(3))/pi)
-  ifelse(rA>=rB,sA<-sA+1,sB<-sB+1)
-  }
-  cat("sA: ",sA,"sB: ",sB,"\n")
-  return(c(sA,sB))
+    rA <- subset(ratingTable, team==tA)[,4]
+    rB <- subset(ratingTable, team==tB)[,4]
+    rdA <- subset(ratingTable, team==tA)[,5]
+    rdB <- subset(ratingTable, team==tB)[,5]
+    sA <- 0
+    sB <- 0
+    while((sA<15) & (sB<15)) {
+        RA <- rlogis(1,rA,(rdA*sqrt(3))/pi)
+        RB <- rlogis(1,rB,(rdB*sqrt(3))/pi)
+        ifelse(RA>=RB,sA<-sA+1,sB<-sB+1)
+    }
+    cat("sA: ",sA,"sB: ",sB,"\n")
+    return(c(sA,sB))
 }
-
-t <- replicate(100,sim(ratingTable),simplify = T)
-games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
-
-ratingTable$calcRating <- 0
-ratingTable$calcRatingDeviation <- spread
-ratingTable$calcRatingStandard <- 0
-ratingTable$rIndex <- 1
 
 gameRating <- function(tA, tB, sA, sB) {
     k <- 1500
@@ -118,6 +103,50 @@ calcRatingStandard <- function(games) {
     t <- games
     t$gameRatingA <- mapply(gameRatingStandard, t$teamA, t$teamB, t$scoreA, t$scoreB)
 }
+
+roundRobin <- function(teams,iter=1) {
+    rounds <- list()
+    n <- length(teams)
+    for(i in 1:((n-1)*iter)) {
+        round <-
+            data.frame(
+                round = i,
+                team1 = teams[1:(n/2)],
+                team2 = rev(teams)[1:(n/2)])
+        rounds[[i]] <- round
+        teams <- c( teams[1], last(teams), head(teams[-1],-1))
+    }
+    return(bind_rows(rounds))
+}
+
+# create list of teams and give them random ratings from a normal distribution
+numTeams <- 12
+teams <- as.character(LETTERS[1:numTeams])
+#set.seed(161)
+spread <- 600 # set to 600 means that every 100 point difference in rating
+              # roughly corresponds to an additional 5% chance to win a point
+rlogis2 <- function(n,mean,sd) { mean+sd*scale(rlogis(n)) }
+ratings <- rlogis2(numTeams,0,(spread/10*sqrt(3))/pi)
+#ratings <- sort(ratings, decreasing = TRUE)
+spreads <- rnorm(numTeams,spread,0)
+ratingTable <- data.frame(teams,ratings,spreads,0,spread)
+names(ratingTable) <- c("team", "rating", "ratingDeviation", "calcRating", "calcRatingDeviation")
+ratingTable %>% mutate_if(is.factor, as.character) -> ratingTable
+
+scores <- list()
+for(i in 1:(nrow(rr))) {
+    score <- simGame(rr[i,2],rr[i,3])
+    scores[[i]] <- score
+    cat("scores: ",score,"\n")
+}
+
+t <- replicate(100,sim(ratingTable),simplify = T)
+games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
+
+ratingTable$calcRating <- 0
+ratingTable$calcRatingDeviation <- spread
+ratingTable$calcRatingStandard <- 0
+ratingTable$rIndex <- 1
 
 calcRatingStandard(games)
 iterations <- 10
