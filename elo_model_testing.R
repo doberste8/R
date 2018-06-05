@@ -34,13 +34,6 @@ expPoint <- function(rA,rB,rdA=spread,rdB=spread) {
     return(p)
 }
 
-sim <- function(df) {
-    rSample <- df[sample(nrow(df),2),]
-    cat("rA: ",rSample[1,"rating"],"rB: ",rSample[2,"rating"],"\n")
-    result <- simGame(rSample[1,],rSample[2,])
-    return(c(rSample[1,"team"],rSample[2,"team"],result[1],result[2]))
-}
-
 simGame <- function(tA,tB) {
     rA <- subset(ratingTable, team==tA)[,4]
     rB <- subset(ratingTable, team==tB)[,4]
@@ -132,6 +125,7 @@ spreads <- rnorm(numTeams,spread,0)
 ratingTable <- data.frame(teams,ratings,spreads,0,spread)
 names(ratingTable) <- c("team", "rating", "ratingDeviation", "calcRating", "calcRatingDeviation")
 ratingTable %>% mutate_if(is.factor, as.character) -> ratingTable
+rr <- roundRobin(teams)
 
 scores <- list()
 for(i in 1:(nrow(rr))) {
@@ -140,8 +134,12 @@ for(i in 1:(nrow(rr))) {
     cat("scores: ",score,"\n")
 }
 
-t <- replicate(100,sim(ratingTable),simplify = T)
-games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
+rr <- cbind(rr,data.frame(matrix(unlist(scores), nrow=66, byrow=T),stringsAsFactors=FALSE))
+names(rr) <- c("round", "teamA", "teamB", "scoreA", "scoreB")
+
+#t <- replicate(100,sim(ratingTable),simplify = T)
+#games <- data.frame(teamA=LETTERS[t[1,]],teamB=LETTERS[t[2,]],scoreA=t[3,],scoreB=t[4,])
+games <- rr
 
 ratingTable$calcRating <- 0
 ratingTable$calcRatingDeviation <- spread
