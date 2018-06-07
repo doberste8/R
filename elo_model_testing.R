@@ -74,6 +74,8 @@ gameRatingStandard <- function(tA, tB, sA, sB) {
     ratingB <- ifelse((sB+1)/(sB+sA+2)>.5, k*(log((sB+1)/(sB+sA+2)+.5)+.5-expPoint(rB,rA,rdB,rdA)), k*(.5-log(-(sB+1)/(sB+sA+2)+1.5)-expPoint(rB,rA,rdB,rdA)))
     ratingTable[which(ratingTable[,1] == tA),6] <<- rA + ratingA
     ratingTable[which(ratingTable[,1] == tB),6] <<- rB + ratingB
+    ratingHist[which(ratingHist[,1] == tA),rIndexA+1] <<- rA + ratingA
+    ratingHist[which(ratingHist[,1] == tB),rIndexB+1] <<- rB + ratingB
     #ratingTable[which(ratingTable[,1] == tA),5] <<- 600/rIndexA^(1/8)
     #ratingTable[which(ratingTable[,1] == tB),5] <<- 600/rIndexB^(1/8)
     ratingTable[which(ratingTable[,1] == tA),7] <<- rIndexA+1
@@ -126,6 +128,8 @@ ratingTable <- data.frame(teams,ratings,spreads,0,spread)
 names(ratingTable) <- c("team", "rating", "ratingDeviation", "calcRating", "calcRatingDeviation")
 ratingTable %>% mutate_if(is.factor, as.character) -> ratingTable
 rr <- roundRobin(teams)
+ratingHistStd <- data.frame(teams,'0'=rep(0,numTeams))
+ratingHistStd %>% mutate_if(is.factor, as.character) -> ratingHistStd
 
 scores <- list()
 for(i in 1:(nrow(rr))) {
@@ -147,6 +151,8 @@ ratingTable$calcRatingStandard <- 0
 ratingTable$rIndex <- 1
 
 calcRatingStandard(games)
+
+
 iterations <- 10
 
 ratingHist <- data.frame('0'=rep(0,numTeams))
