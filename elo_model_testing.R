@@ -51,12 +51,12 @@ simGame <- function(tA,tB) {
 }
 
 gameRating <- function(tA, tB, sA, sB) {
-    k <- 1500
+    #k <- 1500
     rA <- subset(ratingTable, team==tA)[,4]
     rB <- subset(ratingTable, team==tB)[,4]
     rdA <- subset(ratingTable, team==tA)[,5]
     rdB <- subset(ratingTable, team==tB)[,5]
-    #k <- (rdA*sqrt(3))/pi*4.5
+    k <- 5/3*rdA
     rating <- ifelse((sA+1)/(sA+sB+2)>.5, k*(log((sA+1)/(sA+sB+2)+.5)+.5-expPoint(rA,rB,rdA,rdB)), k*(.5-log(-(sA+1)/(sA+sB+2)+1.5)-expPoint(rA,rB,rdA,rdB)))
     return(rating)
 }
@@ -74,8 +74,8 @@ gameRatingStandard <- function(tA, tB, sA, sB) {
     ratingB <- ifelse((sB+1)/(sB+sA+2)>.5, k*(log((sB+1)/(sB+sA+2)+.5)+.5-expPoint(rB,rA,rdB,rdA)), k*(.5-log(-(sB+1)/(sB+sA+2)+1.5)-expPoint(rB,rA,rdB,rdA)))
     ratingTable[which(ratingTable[,1] == tA),6] <<- rA + ratingA
     ratingTable[which(ratingTable[,1] == tB),6] <<- rB + ratingB
-    ratingHist[which(ratingHist[,1] == tA),rIndexA+1] <<- rA + ratingA
-    ratingHist[which(ratingHist[,1] == tB),rIndexB+1] <<- rB + ratingB
+    ratingHistStd[which(ratingHistStd[,1] == tA),rIndexA+1] <<- rA + ratingA
+    ratingHistStd[which(ratingHistStd[,1] == tB),rIndexB+1] <<- rB + ratingB
     #ratingTable[which(ratingTable[,1] == tA),5] <<- 600/rIndexA^(1/8)
     #ratingTable[which(ratingTable[,1] == tB),5] <<- 600/rIndexB^(1/8)
     ratingTable[which(ratingTable[,1] == tA),7] <<- rIndexA+1
